@@ -42,9 +42,11 @@ img_path = "test/xemay.jpg"
 # img = cv2.imread(img_path)
 
 # Đường dẫn video hoặc webcam
-vid = cv2.VideoCapture(0)
-# vid = cv2.VideoCapture("test/VID_plate_3_cut.mp4")
-text_plate = ''
+# vid = cv2.VideoCapture(0)
+vid = cv2.VideoCapture("test/video5.h264")
+text_plate = '' #biển số hiện tại
+prePlate = '' #biển số trước đó
+global plateNumberDict
 plateNumberDict = {}
 
 # Đọc video
@@ -52,6 +54,12 @@ while True:
     return_value, frame = vid.read()
     if return_value:
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+        scale_percent = 40 # percent of original size
+        width = int(frame.shape[1] * scale_percent / 100)
+        height = int(frame.shape[0] * scale_percent / 100)
+        dim = (width, height)
+        # resize image
+        frame = cv2.resize(frame, dim, interpolation = cv2.INTER_AREA)
     else:
         print('Video has ended or failed, try a different video format!')
         break
@@ -74,7 +82,7 @@ while True:
         if len(upper_text) == 4 and (len(lower_text) == 4 or len(lower_text) == 5):
                 # check char at index 2 is character
                 if ord(upper_text[2]) > 64 and ord(upper_text[2]) < 91:
-                    if (ord(upper_text[0]) > 47 and ord(upper_text[0]) < 58) and (ord(upper_text[1]) > 47 and ord(upper_text[1]) < 58) and (ord(upper_text[3]) > 47 and ord(upper_text[3]) < 58):
+                    if (ord(upper_text[0]) > 47 and ord(upper_text[0]) < 58) and (ord(upper_text[1]) > 47 and ord(upper_text[1]) < 58):
                         if len(lower_text) == 4:
                             print("Bằng 4")
                             if (ord(lower_text[0]) > 47 and ord(lower_text[0]) < 58) and (ord(lower_text[1]) > 47 and ord(lower_text[1]) < 58) and (ord(lower_text[2]) > 47 and ord(lower_text[2]) < 58) and (ord(lower_text[3]) > 47 and ord(lower_text[3]) < 58):
@@ -102,6 +110,18 @@ while True:
             file.close()
             frame = cv2.putText(frame, keyMax + " XIN MOI QUET THE", (20, 30),
                                 cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+
+    deldic = open("deldic.txt", "r")
+    
+    if deldic.read() == "OK":
+        print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+        print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+        print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+
+        plateNumberDict.clear()
+        deldic = open("deldic.txt", "w")
+        deldic.write("DETECT")
+        deldic.close()
 
     fps = 1.0 / (time.time() - start_time)
     print("FPS: %.2f" % fps)

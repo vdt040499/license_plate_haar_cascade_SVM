@@ -23,7 +23,15 @@ def detect(img):
         if not faces:
             return np.array([]), np.array([]) 
         else:
-            cropped = img[y:y+h, x+20:x+w-20]
+            cropped = img[y:y+h, x+5:x+w-5]
+
+            scale_percent = 330 # percent of original size
+            width = int(cropped.shape[1] * scale_percent / 100)
+            height = int(cropped.shape[0] * scale_percent / 100)
+            dim = (width, height)
+            # resize image
+            cropped = cv2.resize(cropped, dim, interpolation = cv2.INTER_AREA)
+            cv2.imshow("crop", cropped)
 
         #Crop half of plate (top and bottom)
             plate_upper = cropped[0:int(cropped.shape[0]/2), 0:int(cropped.shape[1])]
@@ -34,7 +42,15 @@ def detect(img):
         if faces.size == 0:
             return np.array([]), np.array([]) 
         else:
-            cropped = img[y:y+h, x+20:x+w-20]
+            cropped = img[y:y+h, x+5:x+w-5]
+
+            scale_percent = 330 # percent of original size
+            width = int(cropped.shape[1] * scale_percent / 100)
+            height = int(cropped.shape[0] * scale_percent / 100)
+            dim = (width, height)
+            # resize image
+            cropped = cv2.resize(cropped, dim, interpolation = cv2.INTER_AREA)
+            cv2.imshow("crop", cropped)
 
         #Crop half of plate (top and bottom)
             plate_upper = cropped[0:int(cropped.shape[0]/2), 0:int(cropped.shape[1])]
