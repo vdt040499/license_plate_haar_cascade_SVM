@@ -11,12 +11,10 @@ def detect(img):
 
     # detect faces
     faces = classifier.detectMultiScale(gray, 1.1, 3)
-    print("faces", type(faces))
 
     # draw rectangles on image for every detected face
     for (x,y,w,h) in faces:
         img = cv2.rectangle(img, (x,y), (x+w,y+h), (455, 0, 0), 4)
-        print(x, y, w, h)
     
     #Crop plate
     if type(faces) == tuple:
