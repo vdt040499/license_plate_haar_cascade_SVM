@@ -22,6 +22,8 @@ def preprocess(imgOriginal):
 
     imgThresh = cv2.adaptiveThreshold(imgBlurred, 255.0, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, ADAPTIVE_THRESH_BLOCK_SIZE, ADAPTIVE_THRESH_WEIGHT)
 
+    cv2.imshow('Thresh', imgThresh)
+
     return imgThresh
 # end function
 

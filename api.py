@@ -21,41 +21,47 @@ import json
 
 def main(argv):
     # Run on Win
-    # url = 'https://votan-sparking.herokuapp.com/tickets/createticket'
-    url = 'http://localhost:3000/tickets/createticket'
+    url = 'https://votan-sparking.herokuapp.com/tickets/createticket'
+    # url = 'http://localhost:3000/tickets/createticket'
     userId = '17521022'
     pre_value = ''
     reset_temp = open("temp.txt", "w")
     reset_temp.write("noplate")
     reset_temp.close()
     while True:
-        file = open("temp.txt", "r") #lưu biển số và số lần lớn nhất
-        number = str(file.read()) #đọc file
-        if number != pre_value:
-            pre_value = number
-        else:
-            if len(number) > 10: #nếu số lượng kí tự lớn hơn 10
-                dataArr = number.split("-") #cắt chuỗi bỏ vào 1 mảng 2 phần tử
-                # phần tử thứ nhất  dataArr[0]: biển sô
-                # phần tử thứ 2     dataArr[1]: keymax
-                payload = { 'numplate': dataArr[0], 'userId': userId} # nội dung payload chứa biển số xe + userId
-                r = requests.post(url, data=payload)
-                d = json.loads(r.text)
-                successRes = d["success"]
-                messRes = d["message"]
-                if successRes == False:
-                    print(messRes)
-                    wrong_plate = open("wrongplate.txt", "w")
-                    wrong_plate.write(dataArr[0])
-                    wrong_plate.close()
+        success = open("success.txt", "r")
+        if (str(success.read()) == "OK"):
+            temp = open("temp.txt", "r")
+            current_session = temp.read()
+            if len(current_session) > 7:
+                if len(current_session) <=18:
+                    plates = current_session.split("]-[")[0][2:-1]
+                    values = current_session.split("]-[")[1][0:-1]
+                    if len(str(values)) == 1:
+                        values = '00' + str(values)
+                    elif len(str(values)) == 2:
+                        values = '0' + str(values)
+                    elif len(str(values)) == 3:
+                        values = str(values)
                 else:
-                    print(str(userId) + 'TAO VE THANH CONG') #tạo vé thành công
-                    reset_temp = open("temp.txt", "w")
-                    reset_temp.write("noplate")
-                    reset_temp.close()
-                    preplate = open("preplate.txt", "w")
-                    preplate.write(dataArr[0])
-                    preplate.close()
+                    plates = current_session.split("-")[0][2:-2].split("', '")
+                    values = current_session.split("-")[1][1:-1].split(", ")
+                    for i in range(len(values)):
+                        if len(str(values[i])) == 1:
+                            values[i] = '00' + str(values[i])
+                        elif len(str(values[i])) == 2:
+                            values[i] = '0' + str(values[i])
+                        elif len(str(values[i])) == 3:
+                            values[i] = str(values[i])
+
+                print(values)
+                payload = { 'plates': plates, 'values': values, 'userId': userId} # nội dung payload chứa biển số xe + userId
+                # r = requests.post(url, data=payload)
+                # d = json.loads(r.text)
+                success = open("success.txt", "w")
+                success.write("DETECTING")
+                # successRes = d["success"]
+                # messRes = d["message"]
 
     # Run on Raspberry Pi
     # url = 'https://votan-sparking.herokuapp.com/tickets/createticket'
