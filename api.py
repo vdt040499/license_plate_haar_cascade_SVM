@@ -29,39 +29,34 @@ def main(argv):
     reset_temp.write("noplate")
     reset_temp.close()
     while True:
-        success = open("success.txt", "r")
-        if (str(success.read()) == "OK"):
-            temp = open("temp.txt", "r")
-            current_session = temp.read()
-            if len(current_session) > 7:
-                if len(current_session) <=18:
-                    plates = current_session.split("]-[")[0][2:-1]
-                    values = current_session.split("]-[")[1][0:-1]
-                    if len(str(values)) == 1:
-                        values = '00' + str(values)
-                    elif len(str(values)) == 2:
-                        values = '0' + str(values)
-                    elif len(str(values)) == 3:
-                        values = str(values)
-                else:
-                    plates = current_session.split("-")[0][2:-2].split("', '")
-                    values = current_session.split("-")[1][1:-1].split(", ")
-                    for i in range(len(values)):
-                        if len(str(values[i])) == 1:
-                            values[i] = '00' + str(values[i])
-                        elif len(str(values[i])) == 2:
-                            values[i] = '0' + str(values[i])
-                        elif len(str(values[i])) == 3:
-                            values[i] = str(values[i])
+        process = open("process.txt", "r")
+        temp = open("temp.txt", "r")
+        current_session = temp.read()
+        plates = []
+        values = []
+        if len(current_session) > 7:
+            if len(current_session) <=18:
+                plates = current_session.split("]-[")[0][2:-1]
+                values = current_session.split("]-[")[1][0:-1]
+            else:
+                plates = current_session.split("-")[0][2:-2].split("', '")
+                values = current_session.split("-")[1][1:-1].split(", ")
+            if (str(process.read()) == "DETECTING" and int(values[0]) > 7):
+                    # print(len(current_session))
+                    # print('Values: ', values)
+                    # payload = { 'plates': plates, 'values': values, 'userId': userId} # nội dung payload chứa biển số xe + userId
+                    # r = requests.post(url, data=payload)
+                    # d = json.loads(r.text)
+                    print('Hello: ', values[0])
+                    process = open("process.txt", "w")
+                    process.write("DONE")
+                    process.close()
 
-                print(values)
-                payload = { 'plates': plates, 'values': values, 'userId': userId} # nội dung payload chứa biển số xe + userId
-                # r = requests.post(url, data=payload)
-                # d = json.loads(r.text)
-                success = open("success.txt", "w")
-                success.write("DETECTING")
-                # successRes = d["success"]
-                # messRes = d["message"]
+                    preplate = open("preplate.txt", "w")
+                    preplate.write(plates[0])
+                    preplate.close()
+                    # successRes = d["success"]
+                    # messRes = d["message"]
 
     # Run on Raspberry Pi
     # url = 'https://votan-sparking.herokuapp.com/tickets/createticket'

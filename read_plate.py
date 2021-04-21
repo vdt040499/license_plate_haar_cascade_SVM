@@ -47,16 +47,16 @@ model_svm = cv2.ml.SVM_load('svm.xml')
 
 # Test trên video
 # vid = cv2.VideoCapture(0)
-vid = cv2.VideoCapture("test/video5.h264")
+vid = cv2.VideoCapture("test/video2.h264")
 
 text_plate = '' # Biến để lưu biển số trong frame hiện tại
 global plateNumberDict 
 plateNumberDict = {} # Biến để lưu danh sách các biển số cho một xe
 
 # Chuyển trạng thái detecting
-success = open("success.txt", "w")
-success.write("DETECTING")
-success.close()
+process = open("process.txt", "w")
+process.write("DETECTING")
+process.close()
 
 # Đọc video
 while True:
@@ -90,6 +90,9 @@ while True:
 
         text_plate = str(upper_text) + " " + str(lower_text)
 
+        if not not bool(plateNumberDict):
+            plateNumberDict = dict(sorted(plateNumberDict.items(), key=lambda item: item[1], reverse=True))
+
         # Xét điều kiện nửa biển số trên có 4 kí tự, nửa biển số dưới có 4 hoặc 5 kí tự
         if len(upper_text) == 4 and (len(lower_text) == 4 or len(lower_text) == 5):
                 # check char at index 2 is character
@@ -109,33 +112,35 @@ while True:
                                         if plate_similarity(str(text_plate), str(plate)) > 0.7:
                                             similar_plate_count += 1
 
-                                    # Nếu không tương đồng 1 trong số biển số sẽ clear Dict
-                                    if similar_plate_count != len(plateNumberDict):
-                                        plates = []
-                                        values = []
-                                        for plate, value in plateNumberDict.items():
-                                            plates.append(plate)
-                                            values.append(value)
-                                        success = open("success.txt", "r")
-                                        if (str(success.read()) == "DETECTING"): 
-                                            # Kết thúc 1 giai đoạn biển số
-                                        
-                                            # Chuyển trạng thái file success sang OK (Báo hiệu cho phép quẹt thẻ)
-                                            success = open("success.txt", "w")
-                                            success.write(str("OK"))
-                                            success.close()
+                                    # Kiểm tra xem vé đã tạo thành công chưa
+                                    process = open("process.txt", "r")
 
-                                            # Lưu danh sách list biển số tạm của 1 biển số vào file temp
-                                            temp = open("temp.txt", "w")
-                                            temp.write(str(plates) + '-' + str(values))
-                                            temp.close()
-                                            plateNumberDict.clear()
+                                    # Nếu không tương đồng 1 trong số biển số hoắc đã tạo vé thành công sẽ clear Dict
+                                    if similar_plate_count != len(plateNumberDict) or process.read() == 'DONE':
+                                        plateNumberDict.clear()
+                                        print('CLEAR DICT')
+                                        processw1 = open("process.txt", "w")
+                                        processw1.write("DETECTING")
+                                        processw1.close()
+
+                                    plates = []
+                                    values = []
+                                    for plate, value in plateNumberDict.items():
+                                        plates.append(plate)
+                                        values.append(value)
+
+                                    # Lưu danh sách list biển số tạm của 1 biển số vào file temp
+                                    temp = open("temp.txt", "w")
+                                    temp.write(str(plates) + '-' + str(values))
+                                    temp.close()
                                 
-                                # Lưu biển số vào Dict
-                                if text_plate in plateNumberDict.keys():
-                                    plateNumberDict[str(text_plate)] += 1
-                                else:
-                                    plateNumberDict[str(text_plate)] = 1
+                                preplate = open("preplate.txt", "r")
+                                if (not plate_similarity(str(text_plate), str(preplate.read())) > 0.7):
+                                    # Lưu biển số vào Dict
+                                    if text_plate in plateNumberDict.keys():
+                                        plateNumberDict[str(text_plate)] += 1
+                                    else:
+                                        plateNumberDict[str(text_plate)] = 1
 
                         # trường hợp số lượng kí tự nửa biển số dưới bẳng 5
                         if len(lower_text) == 5:
@@ -143,42 +148,56 @@ while True:
                             if (ord(lower_text[0]) > 47 and ord(lower_text[0]) < 58) and (ord(lower_text[1]) > 47 and ord(lower_text[1]) < 58) and (ord(lower_text[2]) > 47 and ord(lower_text[2]) < 58) and (ord(lower_text[3]) > 47 and ord(lower_text[3]) < 58) and (ord(lower_text[4]) > 47 and ord(lower_text[4]) < 58):
                                 similar_plate_count = 0
                                 if len(plateNumberDict) > 0:
-                                    
                                     # Kiểm tra biển số hiện tại có tương đồng với các biển số trong Dict hay không ?
                                     for plate in plateNumberDict.keys():
                                         if plate_similarity(str(text_plate), str(plate)) > 0.7:
                                             similar_plate_count += 1
-                                    # Nếu không tương đồng 1 trong số biển số sẽ clear Dict
-                                    if similar_plate_count != len(plateNumberDict):
-                                        plates = []
-                                        values = []
-                                        for plate, value in plateNumberDict.items():
-                                            plates.append(plate)
-                                            values.append(value)
-                                        success = open("success.txt", "r")
-                                        if (str(success.read()) == "DETECTING"):
-                                             # Kết thúc 1 giai đoạn biển số
-                                        
-                                            # Chuyển trạng thái file success sang OK (Báo hiệu cho phép quẹt thẻ)
-                                            success = open("success.txt", "w")
-                                            success.write(str("OK"))
-                                            success.close()
 
-                                            # Lưu danh sách list biển số tạm của 1 biển số vào file temp
-                                            temp = open("temp.txt", "w")
-                                            temp.write(str(plates) + '-' + str(values))
-                                            temp.close()
-                                            plateNumberDict.clear()
+                                    # Kiểm tra xem vé đã tạo thành công chưa
+                                    process = open("process.txt", "r")
 
-                                 # Lưu biển số vào Dict
-                                if text_plate in plateNumberDict.keys():
-                                    plateNumberDict[str(text_plate)] += 1
-                                else:
-                                    plateNumberDict[str(text_plate)] = 1
+                                    # Nếu không tương đồng 1 trong số biển số hoắc đã tạo vé thành công sẽ clear Dict
+                                    if similar_plate_count != len(plateNumberDict) or process.read() == 'DONE':
+                                        plateNumberDict.clear()
+                                        print('CLEAR DICT')
+                                        processw2 = open("process.txt", "w")
+                                        processw2.write("DETECTING")
+                                        processw2.close()
+
+                                    plates = []
+                                    values = []
+                                    for plate, value in plateNumberDict.items():
+                                        plates.append(plate)
+                                        values.append(value)
+
+                                    # Lưu danh sách list biển số tạm của 1 biển số vào file temp
+                                    temp = open("temp.txt", "w")
+                                    temp.write(str(plates) + '-' + str(values))
+                                    temp.close()
+
+                                preplate = open("preplate.txt", "r")
+                                if (not plate_similarity(str(text_plate), str(preplate.read())) > 0.7):
+                                    # Lưu biển số vào Dict
+                                    if text_plate in plateNumberDict.keys():
+                                        plateNumberDict[str(text_plate)] += 1
+                                    else:
+                                        plateNumberDict[str(text_plate)] = 1
 
     print('current Dict: ', str(plateNumberDict))
-    frame = cv2.putText(frame, " ", (20, 100),
+
+    process = open("process.txt", "r")
+
+    if not not bool (plateNumberDict):
+        keyMax = max(plateNumberDict, key=plateNumberDict.get)
+        if (process.read() == 'DETECTING' and int(plateNumberDict[keyMax]) > 7):
+            print('DETECTING')
+            frame = cv2.putText(frame, "MOI QUET MA", (20, 100),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+
+    if (process.read() == 'DONE'):
+        frame = cv2.putText(frame, "MOI XE QUA", (20, 100),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+
     fps = 1.0 / (time.time() - start_time)
     print("FPS: %.2f" % fps)
     result = np.asarray(frame)
