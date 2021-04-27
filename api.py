@@ -7,6 +7,8 @@ import requests
 # from mfrc522 import SimpleMFRC522
 import time
 import json
+import difflib
+from pyzbar.pyzbar import decode
 
 # def unlock_cooler():
     # GPIO.setup(11, GPIO.OUT)
@@ -17,7 +19,14 @@ import json
     # p.ChangeDutyCycle(2.5)
     # time.sleep(1)
     # p.stop()
-    
+
+def plate_similarity(a, b):
+    seq = difflib.SequenceMatcher(a=a.lower(), b=b.lower())
+    return seq.ratio()
+
+cap = cv2.VideoCapture(0)
+cap.set(3,640)
+cap.set(4,480)
 
 def main(argv):
     # Run on Win
@@ -42,19 +51,39 @@ def main(argv):
                 plates = current_session.split("-")[0][2:-2].split("', '")
                 values = current_session.split("-")[1][1:-1].split(", ")
             if (str(process.read()) == "DETECTING" and int(values[0]) > 7):
-                    # print(len(current_session))
-                    # print('Values: ', values)
-                    # payload = { 'plates': plates, 'values': values, 'userId': userId} # nội dung payload chứa biển số xe + userId
-                    # r = requests.post(url, data=payload)
-                    # d = json.loads(r.text)
-                    print('Hello: ', values[0])
-                    process = open("process.txt", "w")
-                    process.write("DONE")
-                    process.close()
+                while True:
+                    success, img = cap.read()
+                #     myData = ''
+                #     for barcode in decode(img):
+                #         myData = barcode.data.decode('utf-8')
+                #         print('myData: ', myData)
+                #         pts = np.array([barcode.polygon],np.int32)
+                #         pts = pts.reshape((-1,1,2))
+                #         cv2.polylines(img,[pts],True,(255,0,255),5)
+                #         pts2= barcode.rect
+                #         cv2.putText(img, myData,(pts2[0],pts2[1]), cv2.FONT_HERSHEY_SIMPLEX,0.9,(255,0,255),2)
+                    cv2.imshow('Result',img)
+                #     if cv2.waitKey(1) & 0xFF == ord('q'):
+                #         break
 
-                    preplate = open("preplate.txt", "w")
-                    preplate.write(plates[0])
-                    preplate.close()
+                # if plate_similarity(str(myData), str(plates[0])) > 0.8:
+                    if int(values[0]) > 8:
+                        # print('qr: ', myData)
+                        # print('camera: ', plates[0])
+                        process = open("process.txt", "w")
+                        process.write("DONE")
+                        process.close()
+
+                        preplate = open("preplate.txt", "w")
+                        preplate.write(plates[0])
+                        preplate.close()
+                        break
+                cv.DestroyWindow(name)
+                    
+
+                    # else:
+                    #     print('TAO VE THAT BAI!!!!!!!!!!!!!!!!!!!!!!!!!')
+                    #     break
                     # successRes = d["success"]
                     # messRes = d["message"]
 

@@ -58,6 +58,9 @@ process = open("process.txt", "w")
 process.write("DETECTING")
 process.close()
 
+process = open("preplate.txt", "w")
+process.write("noplate")
+process.close()
 # Đọc video
 while True:
     return_value, frame = vid.read()
@@ -119,9 +122,10 @@ while True:
                                     if similar_plate_count != len(plateNumberDict) or process.read() == 'DONE':
                                         plateNumberDict.clear()
                                         print('CLEAR DICT')
-                                        processw1 = open("process.txt", "w")
-                                        processw1.write("DETECTING")
-                                        processw1.close()
+                                        if similar_plate_count != len(plateNumberDict):
+                                            processw1 = open("process.txt", "w")
+                                            processw1.write("DETECTING")
+                                            processw1.close()
 
                                     plates = []
                                     values = []
@@ -160,9 +164,10 @@ while True:
                                     if similar_plate_count != len(plateNumberDict) or process.read() == 'DONE':
                                         plateNumberDict.clear()
                                         print('CLEAR DICT')
-                                        processw2 = open("process.txt", "w")
-                                        processw2.write("DETECTING")
-                                        processw2.close()
+                                        if similar_plate_count != len(plateNumberDict):
+                                            processw2 = open("process.txt", "w")
+                                            processw2.write("DETECTING")
+                                            processw2.close()
 
                                     plates = []
                                     values = []
