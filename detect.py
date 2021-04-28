@@ -29,7 +29,6 @@ def detect(img):
             dim = (width, height)
             # resize image
             cropped = cv2.resize(cropped, dim, interpolation = cv2.INTER_AREA)
-            cv2.imshow("crop", cropped)
 
         #Crop half of plate (top and bottom)
             plate_upper = cropped[0:int(cropped.shape[0]/2), 0:int(cropped.shape[1])]
@@ -48,7 +47,6 @@ def detect(img):
             dim = (width, height)
             # resize image
             cropped = cv2.resize(cropped, dim, interpolation = cv2.INTER_AREA)
-            cv2.imshow("crop", cropped)
 
         #Crop half of plate (top and bottom)
             plate_upper = cropped[0:int(cropped.shape[0]/2), 0:int(cropped.shape[1])]

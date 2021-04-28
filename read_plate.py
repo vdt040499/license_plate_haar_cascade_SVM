@@ -13,9 +13,8 @@ def plate_similarity(a, b):
     seq = difflib.SequenceMatcher(a=a.lower(), b=b.lower())
     return seq.ratio()
 
-# Ham sap xep contour tu trai sang phai
+# Hàm sắp xếp contour từ phải sang trái
 def sort_contours(cnts):
-
     reverse = False
     i = 0
     boundingBoxes = [cv2.boundingRect(c) for c in cnts]
@@ -23,10 +22,10 @@ def sort_contours(cnts):
                                         key=lambda b: b[1][i], reverse=reverse))
     return cnts
 
-# Dinh nghia cac ky tu tren bien so
+# Định nghĩa các kí tự trên biển số
 char_list =  '0123456789ABCDEFGHKLMNPRSTUVXYZ'
 
-# Ham fine tune bien so, loai bo cac ki tu khong hop ly
+# Hàm fine tune biển số => loại bỏ các kí tự không hợp lý
 def fine_tune(lp):
     newString = ""
     for i in range(len(lp)):
@@ -35,9 +34,9 @@ def fine_tune(lp):
     return newString
 
 
-# Cau hinh tham so cho model SVM
-digit_w = 30 # Kich thuoc ki tu
-digit_h = 60 # Kich thuoc ki tu
+# Cấu hình tham số cho model SVM
+digit_w = 30 # Chiều rộng kí tự
+digit_h = 60 # Chiều dài kí tự
 model_svm = cv2.ml.SVM_load('svm.xml')
 
 # Test trên ảnh
@@ -51,9 +50,9 @@ vid = cv2.VideoCapture("test/video2.h264")
 
 text_plate = '' # Biến để lưu biển số trong frame hiện tại
 global plateNumberDict 
-plateNumberDict = {} # Biến để lưu danh sách các biển số cho một xe
+plateNumberDict = {} # Biến để lưu danh sách các biển số tạm của một xe
 
-# Chuyển trạng thái detecting
+# Init status
 process = open("process.txt", "w")
 process.write("DETECTING")
 process.close()
@@ -61,6 +60,7 @@ process.close()
 process = open("preplate.txt", "w")
 process.write("noplate")
 process.close()
+
 # Đọc video
 while True:
     return_value, frame = vid.read()
@@ -115,10 +115,10 @@ while True:
                                         if plate_similarity(str(text_plate), str(plate)) > 0.7:
                                             similar_plate_count += 1
 
-                                    # Kiểm tra xem vé đã tạo thành công chưa
+                                    # Kiểm tra biển số đã được kiểm tra
                                     process = open("process.txt", "r")
 
-                                    # Nếu không tương đồng 1 trong số biển số hoắc đã tạo vé thành công sẽ clear Dict
+                                    # Nếu không tương đồng 1 trong số biển số hoắc đã kiểm tra thành công sẽ clear Dict
                                     if similar_plate_count != len(plateNumberDict) or process.read() == 'DONE':
                                         plateNumberDict.clear()
                                         print('CLEAR DICT')
@@ -126,6 +126,14 @@ while True:
                                             processw1 = open("process.txt", "w")
                                             processw1.write("DETECTING")
                                             processw1.close()
+                                
+                                preplate = open("preplate.txt", "r")
+                                if (not plate_similarity(str(text_plate), str(preplate.read())) > 0.7):
+                                    # Lưu biển số vào Dict
+                                    if text_plate in plateNumberDict.keys():
+                                        plateNumberDict[str(text_plate)] += 1
+                                    else:
+                                        plateNumberDict[str(text_plate)] = 1
 
                                     plates = []
                                     values = []
@@ -137,14 +145,6 @@ while True:
                                     temp = open("temp.txt", "w")
                                     temp.write(str(plates) + '-' + str(values))
                                     temp.close()
-                                
-                                preplate = open("preplate.txt", "r")
-                                if (not plate_similarity(str(text_plate), str(preplate.read())) > 0.7):
-                                    # Lưu biển số vào Dict
-                                    if text_plate in plateNumberDict.keys():
-                                        plateNumberDict[str(text_plate)] += 1
-                                    else:
-                                        plateNumberDict[str(text_plate)] = 1
 
                         # trường hợp số lượng kí tự nửa biển số dưới bẳng 5
                         if len(lower_text) == 5:
@@ -157,10 +157,10 @@ while True:
                                         if plate_similarity(str(text_plate), str(plate)) > 0.7:
                                             similar_plate_count += 1
 
-                                    # Kiểm tra xem vé đã tạo thành công chưa
+                                    # Kiểm tra biển số đã được kiểm tra
                                     process = open("process.txt", "r")
 
-                                    # Nếu không tương đồng 1 trong số biển số hoắc đã tạo vé thành công sẽ clear Dict
+                                    # Nếu không tương đồng 1 trong số biển số hoắc đã kiểm tra thành công sẽ clear Dict
                                     if similar_plate_count != len(plateNumberDict) or process.read() == 'DONE':
                                         plateNumberDict.clear()
                                         print('CLEAR DICT')
@@ -168,6 +168,14 @@ while True:
                                             processw2 = open("process.txt", "w")
                                             processw2.write("DETECTING")
                                             processw2.close()
+
+                                preplate = open("preplate.txt", "r")
+                                if (not plate_similarity(str(text_plate), str(preplate.read())) > 0.7):
+                                    # Lưu biển số vào Dict
+                                    if text_plate in plateNumberDict.keys():
+                                        plateNumberDict[str(text_plate)] += 1
+                                    else:
+                                        plateNumberDict[str(text_plate)] = 1
 
                                     plates = []
                                     values = []
@@ -180,22 +188,12 @@ while True:
                                     temp.write(str(plates) + '-' + str(values))
                                     temp.close()
 
-                                preplate = open("preplate.txt", "r")
-                                if (not plate_similarity(str(text_plate), str(preplate.read())) > 0.7):
-                                    # Lưu biển số vào Dict
-                                    if text_plate in plateNumberDict.keys():
-                                        plateNumberDict[str(text_plate)] += 1
-                                    else:
-                                        plateNumberDict[str(text_plate)] = 1
-
     print('current Dict: ', str(plateNumberDict))
 
     process = open("process.txt", "r")
-
     if not not bool (plateNumberDict):
         keyMax = max(plateNumberDict, key=plateNumberDict.get)
         if (process.read() == 'DETECTING' and int(plateNumberDict[keyMax]) > 7):
-            print('DETECTING')
             frame = cv2.putText(frame, "MOI QUET MA", (20, 100),
                             cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
