@@ -7,18 +7,27 @@ import time
 import json
 import difflib
 from pyzbar.pyzbar import decode
-# import RPi.GPIO as GPIO
-# from mfrc522 import SimpleMFRC522
+import RPi.GPIO as GPIO
+#from mfrc522 import SimpleMFRC522
 
-# def unlock_cooler():
-    # GPIO.setup(11, GPIO.OUT)
-    # p = GPIO.PWM(11, 50)
-    # p.start(2.5)
-    # p.ChangeDutyCycle(7.5)
-    # time.sleep(1.5)
-    # p.ChangeDutyCycle(2.5)
-    # time.sleep(1)
-    # p.stop()
+def unlock_cooler():
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(17, GPIO.OUT)
+    try:
+        p = GPIO.PWM(17, 50)
+        p.start(2.5)
+        p.ChangeDutyCycle(7.5)
+        time.sleep(1.5)
+        p.ChangeDutyCycle(2.5)
+        time.sleep(1)
+        p.stop()
+    except KeyboardInterrupt: # If CTRL+C is pressed
+        print("Keyboard interrupt")
+    except:
+        print("some error")
+    finally:
+        print("clean up")
+        GPIO.cleanup() # cleanup all GPIO
 
 def plate_similarity(a, b):
     seq = difflib.SequenceMatcher(a=a.lower(), b=b.lower())
@@ -40,12 +49,20 @@ def main(argv):
 
     # Setup QR Cam
     cap = cv2.VideoCapture(0)
-    cap.set(3,640)
-    cap.set(4,480)
+    cap.set(3,300)
+    cap.set(4,300)
 
     while True:
         # Read QR Code
         success, img = cap.read()
+        
+        # Thay đổi kích thước frame hình => Tăng FPS
+        scale_percent = 20 # percent of original size
+        width = int(img.shape[1] * scale_percent / 100)
+        height = int(img.shape[0] * scale_percent / 100)
+        dim = (width, height)
+        img = cv2.resize(img, dim, interpolation = cv2.INTER_AREA) 
+        
         code = ''
         for barcode in decode(img):
             code = barcode.data.decode('utf-8')
@@ -74,7 +91,8 @@ def main(argv):
         # Check condition for create ticket
         if (str(process.read()) == "DETECTING" and len(values) > 0 and int(values[0]) > 1):
             if (code != ''):
-                if plate_similarity(str(code), str(plates[0])) > 0.8:
+                if plate_similarity(str(code), str(plates[0])) > 0.7:
+                    unlock_cooler()
                     print('QR Code: ', code)
                     print('Plate: ', plates[0])
                     print('THANH CONG!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')

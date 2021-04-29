@@ -46,7 +46,7 @@ model_svm = cv2.ml.SVM_load('svm.xml')
 
 # Test trên video
 # vid = cv2.VideoCapture(0)
-vid = cv2.VideoCapture("test/video2.h264")
+vid = cv2.VideoCapture("test/video7.h264")
 
 text_plate = '' # Biến để lưu biển số trong frame hiện tại
 global plateNumberDict 
