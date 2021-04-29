@@ -26,17 +26,25 @@ def plate_similarity(a, b):
 
 def main(argv):
     # Run on QR CAM
+
+    # Info for create ticket request
     url = 'https://votan-sparking.herokuapp.com/tickets/createticket'
     # url = 'http://localhost:3000/tickets/createticket'
     userId = '17521022'
     pre_value = ''
+
+    # Init status
     reset_temp = open("temp.txt", "w")
     reset_temp.write("noplate")
     reset_temp.close()
+
+    # Setup QR Cam
     cap = cv2.VideoCapture(0)
     cap.set(3,640)
     cap.set(4,480)
+
     while True:
+        # Read QR Code
         success, img = cap.read()
         code = ''
         for barcode in decode(img):
@@ -48,6 +56,8 @@ def main(argv):
             cv2.putText(img, code,(pts2[0],pts2[1]), cv2.FONT_HERSHEY_SIMPLEX,0.9,(255,0,255),2)
         cv2.imshow('QR Cam', img)
         cv2.waitKey(1)
+        
+        # Read temp plate
         process = open("process.txt", "r")
         temp = open("temp.txt", "r")
         current_session = temp.read()
@@ -60,12 +70,14 @@ def main(argv):
             else:
                 plates = current_session.split("-")[0][2:-2].split("', '")
                 values = current_session.split("-")[1][1:-1].split(", ")
-        if (str(process.read()) == "DETECTING" and len(values) > 0 and int(values[0]) > 7):
+
+        # Check condition for create ticket
+        if (str(process.read()) == "DETECTING" and len(values) > 0 and int(values[0]) > 1):
             if (code != ''):
                 if plate_similarity(str(code), str(plates[0])) > 0.8:
                     print('QR Code: ', code)
                     print('Plate: ', plates[0])
-                    print('THANH CONG!!!!!!!!!!!!!!!!!!!!!!!')
+                    print('THANH CONG!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                     process = open("process.txt", "w")
                     process.write("DONE")
                     process.close()
@@ -76,6 +88,7 @@ def main(argv):
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     cv2.destroyAllWindows()
+
     # Run on RFID
     # url = 'https://votan-sparking.herokuapp.com/tickets/createticket'
     # while True:

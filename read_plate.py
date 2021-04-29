@@ -188,12 +188,16 @@ while True:
                                     temp.write(str(plates) + '-' + str(values))
                                     temp.close()
 
+    if str(text_plate) == '' and len(plateNumberDict) == 0:
+        plateNumberDict.clear()
+    text_plate = ''
+
     print('current Dict: ', str(plateNumberDict))
 
     process = open("process.txt", "r")
     if not not bool (plateNumberDict):
         keyMax = max(plateNumberDict, key=plateNumberDict.get)
-        if (process.read() == 'DETECTING' and int(plateNumberDict[keyMax]) > 7):
+        if (process.read() == 'DETECTING' and int(plateNumberDict[keyMax]) > 1 and len(plateNumberDict) != 0):
             frame = cv2.putText(frame, "MOI QUET MA", (20, 100),
                             cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
