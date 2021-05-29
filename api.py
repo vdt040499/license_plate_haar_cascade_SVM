@@ -1,11 +1,12 @@
-from absl import app, logging
-import cv2
-import numpy as np
 import os
-import requests
+import cv2
 import time
 import json
 import difflib
+import requests
+import similarity
+import numpy as np
+from absl import app, logging
 from pyzbar.pyzbar import decode
 # import RPi.GPIO as GPIO
 # from mfrc522 import SimpleMFRC522
@@ -19,10 +20,6 @@ from pyzbar.pyzbar import decode
     # p.ChangeDutyCycle(2.5)
     # time.sleep(1)
     # p.stop()
-
-def plate_similarity(a, b):
-    seq = difflib.SequenceMatcher(a=a.lower(), b=b.lower())
-    return seq.ratio()
 
 def main(argv):
     # Run on QR CAM
@@ -74,7 +71,7 @@ def main(argv):
         # Check condition for create ticket
         if (str(process.read()) == "DETECTING" and len(values) > 0 and int(values[0]) > 1):
             if (code != ''):
-                if plate_similarity(str(code), str(plates[0])) > 0.8:
+                if similarity.plate_similarity(str(code), str(plates[0])) > 0.8:
                     print('QR Code: ', code)
                     print('Plate: ', plates[0])
                     print('THANH CONG!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
