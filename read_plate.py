@@ -30,6 +30,18 @@ global plateNumberDict
 plateNumberDict = {} # Curent plate list
 vid = cv2.VideoCapture("test/video2.h264")
 
+# Reset txt file
+def reset():
+    reset_temp = open("temp.txt", "w")
+    reset_temp.write("")
+    reset_temp.close()
+    reset_preplate = open("preplate.txt", "w")
+    reset_preplate.write("")
+    reset_preplate.close()
+    reset_process = open("process.txt", "w")
+    reset_process.write("")
+    reset_process.close()
+
 # Sort contour from left to right
 def sort_contours(cnts):
     reverse = False
@@ -106,6 +118,7 @@ while True:
     cv2.imshow("result", result)
     print('------------------------------------------------------------------------------------------------------------')
     if cv2.waitKey(1) & 0xFF == ord('q'):
+        reset()
         break
 
 cv2.destroyAllWindows()

@@ -1,5 +1,4 @@
 def check_plate(upper_text, lower_text):
-  print(upper_text + ' ' + lower_text)
   # Xét điều kiện nửa biển số trên có 4 kí tự, nửa biển số dưới có 4 hoặc 5 kí tự
   if len(upper_text) == 4 and (len(lower_text) == 4 or len(lower_text) == 5):
     # check char at index 2 is character
