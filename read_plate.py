@@ -3,6 +3,7 @@ import cv2
 import json
 import time
 import detect
+import tkinter
 import requests
 import save_temp
 import threading
@@ -46,6 +47,7 @@ plateNumberDict = {} # Curent plate list
 img = np.array([])
 frame = np.array([])
 temp_frame = np.array([])
+current_user = type({})()
 
 # Define file
 vid = cv2.VideoCapture("test/video2.h264")
@@ -82,6 +84,7 @@ def fine_tune(lp):
 def run_rp():
     global temp_frame
     global text_plate
+    global current_user
     global plateNumberDict
 
     # Read video
@@ -123,6 +126,8 @@ def run_rp():
         # Reverse current plate number list
         plateNumberDict = dict(sorted(plateNumberDict.items(), key=lambda item: item[1], reverse=True))
         print('current Dict: ', str(plateNumberDict))
+        # if (current_user != ''):
+        # print('current User: ', str(current_user["username"]))
 
         process = open("process.txt", "r")
         temp = open("temp.txt", "r")
@@ -150,6 +155,7 @@ def run_rp():
 
 def run_api():
     global img
+    global current_user
 
     # Api url
     # url = 'https://votan-sparking.herokuapp.com/tickets/createticket'
@@ -179,9 +185,7 @@ def run_api():
             pts = pts.reshape((-1,1,2))
             cv2.polylines(img,[pts],True,(255,0,255),5)
             pts2= barcode.rect
-            cv2.putText(img, code,(pts2[0],pts2[1]), cv2.FONT_HERSHEY_SIMPLEX,0.9,(255,0,255),2)
-        # cv2.imshow('QR Cam', img)
-        cv2.waitKey(1)
+            cv2.putText(img, '',(pts2[0],pts2[1]), cv2.FONT_HERSHEY_SIMPLEX,0.9,(255,0,255),2)
         
         # Read temp plate
         process = open("process.txt", "r")
@@ -201,13 +205,25 @@ def run_api():
                         print('THANH CONG!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                         r = requests.post(url+str(id_code))
                         d = json.loads(r.text)
-                        process = open("process.txt", "w")
-                        process.write("DONE")
-                        process.close()
+                        successMes = d["success"]
+                        user = str(d["user"])
+                        user = user.replace("\'", "\"")
+                        if successMes == True:
+                            current_user = json.loads(user)
+                            print('User: ', current_user)
+                            username.configure(text = current_user["username"])
+                            email.configure(text = current_user["email"])
+                            position.configure(text = current_user["position"])
+                            id.configure(text = current_user["ID"])
+                            lplate.configure(text = current_user["plate"])
 
-                        preplate = open("preplate.txt", "w")
-                        preplate.write(plate)
-                        preplate.close()
+                            process = open("process.txt", "w")
+                            process.write("DONE")
+                            process.close()
+
+                            preplate = open("preplate.txt", "w")
+                            preplate.write(plate)
+                            preplate.close()
         quit = open("quit.txt", "r")
         if quit.read() == 'yes':
             reset()
@@ -244,7 +260,7 @@ def run_api():
 def show_cam():
     global img                            
     if not img.size == 0:
-        img = cv2.resize(img,(500,300))
+        img = cv2.resize(img,(400,300))
         pic = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)                      
         timg = Image.fromarray(pic)
         imgtk = ImageTk.PhotoImage(image=timg)
@@ -255,7 +271,7 @@ def show_cam():
 def show_vid():
     global temp_frame
     if not temp_frame.size == 0:
-        temp_frame = cv2.resize(temp_frame,(500,300))
+        temp_frame = cv2.resize(temp_frame,(570,300))
         img2 = Image.fromarray(temp_frame)
         img2tk = ImageTk.PhotoImage(image=img2)
         lmain2.img2tk = img2tk
@@ -288,13 +304,99 @@ if __name__ == '__main__':
     bg = PhotoImage(file="./images/main_screen.png")
     background.configure(image=bg)
 
+    # logo = Label(root)
+    # logo.place(relx=0.01, rely=0.01, width=50, height=50)
+    # icon = PhotoImage(file="./images/logo.png")
+    # logo.configure(image=icon)
+
+    title_name = tkinter.Label(root,text="sParking Tracking System",font=("arial",25,"bold"),bg="white")
+    title_name.place(relx=0.08, rely=0.05, width=1100, height=100)
+
     # QR frame
     lmain = Label(master=root)
-    lmain.place(relx=0.123, rely=0.190, width=500, height=300)
+    lmain.place(relx=0.123, rely=0.190, width=400, height=300)
 
     # Video frame
     lmain2 = Label(master=root)
-    lmain2.place(relx=0.523, rely=0.190, width=500, height=300)
+    lmain2.place(relx=0.463, rely=0.190, width=570, height=300)
+
+    # username = Label(root, bg="white")
+    # username.place(relx=0.123, rely=0.273, width=374, height=24)
+    # username.configure(font="-family {Poppins} -size 10")
+    username_lbl = Label(root)
+    username_lbl.place(relx=0.463, rely=0.607, width=136, height=30)
+    username_lbl.configure(font="-family {Poppins} -size 10")
+    username_lbl.configure(foreground="#000000")
+    username_lbl.configure(background="#ffffff")
+    username_lbl.configure(text="Username")
+    username_lbl.configure(anchor="w")
+
+    username = Label(root)
+    username.place(relx=0.550, rely=0.607, width=136, height=30)
+    username.configure(font="-family {Poppins} -size 10")
+    username.configure(foreground="#000000")
+    username.configure(background="#ffffff")
+    username.configure(anchor="w")
+
+    email_lbl = Label(root)
+    email_lbl.place(relx=0.463, rely=0.657, width=136, height=30)
+    email_lbl.configure(font="-family {Poppins} -size 10")
+    email_lbl.configure(foreground="#000000")
+    email_lbl.configure(background="#ffffff")
+    email_lbl.configure(text="Email")
+    email_lbl.configure(anchor="w")
+
+    email = Label(root)
+    email.place(relx=0.550, rely=0.657, width=136, height=30)
+    email.configure(font="-family {Poppins} -size 10")
+    email.configure(foreground="#000000")
+    email.configure(background="#ffffff")
+    email.configure(anchor="w")
+
+    position_lbl = Label(root)
+    position_lbl.place(relx=0.463, rely=0.707, width=136, height=30)
+    position_lbl.configure(font="-family {Poppins} -size 10")
+    position_lbl.configure(foreground="#000000")
+    position_lbl.configure(background="#ffffff")
+    position_lbl.configure(text="Role")
+    position_lbl.configure(anchor="w")
+
+    position = Label(root)
+    position.place(relx=0.550, rely=0.707, width=136, height=30)
+    position.configure(font="-family {Poppins} -size 10")
+    position.configure(foreground="#000000")
+    position.configure(background="#ffffff")
+    position.configure(anchor="w")
+
+    id_lbl = Label(root)
+    id_lbl.place(relx=0.683, rely=0.607, width=136, height=30)
+    id_lbl.configure(font="-family {Poppins} -size 10")
+    id_lbl.configure(foreground="#000000")
+    id_lbl.configure(background="#ffffff")
+    id_lbl.configure(text="ID Number")
+    id_lbl.configure(anchor="w")
+
+    id = Label(root)
+    id.place(relx=0.770, rely=0.607, width=136, height=30)
+    id.configure(font="-family {Poppins} -size 10")
+    id.configure(foreground="#000000")
+    id.configure(background="#ffffff")
+    id.configure(anchor="w")
+
+    lplate_lbl = Label(root)
+    lplate_lbl.place(relx=0.683, rely=0.657, width=136, height=30)
+    lplate_lbl.configure(font="-family {Poppins} -size 10")
+    lplate_lbl.configure(foreground="#000000")
+    lplate_lbl.configure(background="#ffffff")
+    lplate_lbl.configure(text="Plate Number")
+    lplate_lbl.configure(anchor="w")
+
+    lplate = Label(root)
+    lplate.place(relx=0.770, rely=0.657, width=136, height=30)
+    lplate.configure(font="-family {Poppins} -size 10")
+    lplate.configure(foreground="#000000")
+    lplate.configure(background="#ffffff")
+    lplate.configure(anchor="w")
 
     threading.Thread(target=show_cam).start()
     threading.Thread(target=show_vid).start()
