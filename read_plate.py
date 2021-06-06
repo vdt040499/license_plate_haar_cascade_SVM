@@ -1,34 +1,23 @@
 
 import cv2
+import json
 import time
 import detect
-import difflib
+import requests
 import save_temp
-import preprocess
+import threading
+import similarity
 import check_plate
 import numpy as np
-import handle_halfofplate
-from lib_detection import load_model, detect_lp, im2single
-
-import os
-import cv2
-import time
-import json
-import difflib
-import requests
-import similarity
-import numpy as np
-# import RPi.GPIO as GPIO
-from absl import app, logging
-from pyzbar.pyzbar import decode
-
-import numpy
-import imutils
-import threading
-import cv2
 from tkinter import *
 from tkinter.ttk import *
+import handle_halfofplate
+# import RPi.GPIO as GPIO
+from absl import app, logging
+from tkinter import messagebox
 from PIL import Image, ImageTk
+from pyzbar.pyzbar import decode
+from lib_detection import load_model, detect_lp, im2single
 
 # Define characters on plate number
 char_list =  '0123456789ABCDEFGHKLMNPRSTUVXYZ'
@@ -45,14 +34,21 @@ process.close()
 process = open("preplate.txt", "w")
 process.write("noplate")
 process.close()
+quit = open("quit.txt", "w")
+quit.write("no")
+quit.close()
+
+# Global var
+quit_var = False
 text_plate = '' # Current plate text
 global plateNumberDict 
 plateNumberDict = {} # Curent plate list
+img = np.array([])
+frame = np.array([])
+temp_frame = np.array([])
+
+# Define file
 vid = cv2.VideoCapture("test/video2.h264")
-# vid = cv2.VideoCapture(0)
-img = numpy.array([])
-frame = numpy.array([])
-temp_frame = numpy.array([])
 
 # Reset txt file
 def reset():
@@ -87,6 +83,7 @@ def run_rp():
     global temp_frame
     global text_plate
     global plateNumberDict
+
     # Read video
     while True:
         return_value, frame = vid.read()
@@ -123,18 +120,19 @@ def run_rp():
             plateNumberDict.clear()
         text_plate = ''
 
+        # Reverse current plate number list
         plateNumberDict = dict(sorted(plateNumberDict.items(), key=lambda item: item[1], reverse=True))
         print('current Dict: ', str(plateNumberDict))
 
-        # process = open("process.txt", "r")
-        # temp = open("temp.txt", "r")
-        # if not not bool (plateNumberDict):
-            # keyMax = max(plateNumberDict, key=plateNumberDict.get)
-            # if (process.read() == 'DETECTING' and int(plateNumberDict[keyMax]) > 1 and len(plateNumberDict) != 0):
-                # frame = cv2.putText(frame, "MOI QUET MA", (20, 100),
-                #                 cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-        temp_frame = cv2.putText(frame, "MOI QUET MA", (20, 100),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        process = open("process.txt", "r")
+        temp = open("temp.txt", "r")
+        if not not bool (plateNumberDict):
+            keyMax = max(plateNumberDict, key=plateNumberDict.get)
+            if (process.read() == 'DETECTING' and int(plateNumberDict[keyMax]) > 1 and len(plateNumberDict) != 0):
+                frame = cv2.putText(frame, "MOI QUET MA", (20, 100),
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                temp_frame = cv2.putText(frame, "MOI QUET MA", (20, 100),
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
         # if (process.read() == 'DONE' or (len(plateNumberDict) == 0 and temp.read() != '')):
             # frame = cv2.putText(frame, "MOI XE QUA", (20, 100),
@@ -144,26 +142,18 @@ def run_rp():
 
         fps = 1.0 / (time.time() - start_time)
         print("FPS: %.2f" % fps)
-        # result = np.asarray(frame)
-        # cv2.namedWindow("result", cv2.WINDOW_AUTOSIZE)
-        # result = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-        # cv2.imshow("result", result)
         print('------------------------------------------------------------------------------------------------------------')
-        # if cv2.waitKey(1) & 0xFF == ord('q'):
-        #     reset()
-        #     break
-
-    # cv2.destroyAllWindows()
+        quit = open("quit.txt", "r")
+        if quit.read() == 'yes':
+            reset()
+            break
 
 def run_api():
     global img
-    # Run on QR CAM
 
-    # Info for create ticket request
+    # Api url
     # url = 'https://votan-sparking.herokuapp.com/tickets/createticket'
     url = 'http://localhost:5000/tickets/'
-    # userId = '17521022'
-    # pre_value = ''
 
     # Init status
     reset_temp = open("temp.txt", "w")
@@ -178,13 +168,6 @@ def run_api():
     while True:
         # Read QR Code
         success, img = cap.read()
-        
-        # Modify the frame size => Optimize FPS
-        # scale_percent = 30 # percent of original size
-        # width = int(img.shape[1] * scale_percent / 100)
-        # height = int(img.shape[0] * scale_percent / 100)
-        # dim = (width, height)
-        # img = cv2.resize(img, dim, interpolation = cv2.INTER_AREA) 
 
         plate_code = ''
         id_code = ''
@@ -225,9 +208,10 @@ def run_api():
                         preplate = open("preplate.txt", "w")
                         preplate.write(plate)
                         preplate.close()
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        quit = open("quit.txt", "r")
+        if quit.read() == 'yes':
+            reset()
             break
-    cv2.destroyAllWindows()
 
     # Run on RFID
     # url = 'https://votan-sparking.herokuapp.com/tickets/createticket'
@@ -257,38 +241,62 @@ def run_api():
     #                     unlock_cooler()
     #                     break
 
-def show_vid():
+def show_cam():
     global img                            
-    if not img.size == 0:       
+    if not img.size == 0:
+        img = cv2.resize(img,(500,300))
         pic = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)                      
         timg = Image.fromarray(pic)
         imgtk = ImageTk.PhotoImage(image=timg)
         lmain.imgtk = imgtk
         lmain.configure(image=imgtk)
-    lmain.after(5, show_vid)
+    lmain.after(5, show_cam)
 
-def show_vid2():
+def show_vid():
     global temp_frame
-    global img
     if not temp_frame.size == 0:
-        temp_frame = imutils.resize(temp_frame, width=500)
+        temp_frame = cv2.resize(temp_frame,(500,300))
         img2 = Image.fromarray(temp_frame)
         img2tk = ImageTk.PhotoImage(image=img2)
         lmain2.img2tk = img2tk
         lmain2.configure(image=img2tk)
-    lmain2.after(5, show_vid2)
+    lmain2.after(5, show_vid)
 
 if __name__ == '__main__':
-    threading.Thread(target=run_api).start()
-    threading.Thread(target=run_rp).start()
+    api_thread = threading.Thread(target=run_api)
+    rp_thread = threading.Thread(target=run_rp)
+    api_thread.start()
+    rp_thread.start()
+
+    def Exit():
+        sure = messagebox.askyesno("Exit","Are you sure you want to exit?", parent=root)
+        if sure == True:
+            root.destroy()
+            quit = open("quit.txt", "w")
+            quit.write("yes")
+            quit.close()
+
     root = Tk()
-    lmain = Label(master=root)
-    lmain2 = Label(master=root)
-    lmain.pack(side = LEFT)
-    lmain2.pack(side = RIGHT)
+    root.geometry("1366x768")
     root.title("sParking License Plate Detector")
-    root.geometry("900x700")
-    exitbutton = Button(root, text='Quit', command=root.destroy).pack(side = BOTTOM)
+    root.resizable(0, 0)
+    root.protocol("WM_DELETE_WINDOW", Exit)
+
+    # Background
+    background = Label(root)
+    background.place(relx=0, rely=0, width=1366, height=768)
+    bg = PhotoImage(file="./images/main_screen.png")
+    background.configure(image=bg)
+
+    # QR frame
+    lmain = Label(master=root)
+    lmain.place(relx=0.123, rely=0.190, width=500, height=300)
+
+    # Video frame
+    lmain2 = Label(master=root)
+    lmain2.place(relx=0.523, rely=0.190, width=500, height=300)
+
+    threading.Thread(target=show_cam).start()
     threading.Thread(target=show_vid).start()
-    threading.Thread(target=show_vid2).start()
+
     root.mainloop()
