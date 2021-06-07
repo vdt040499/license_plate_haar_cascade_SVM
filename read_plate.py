@@ -37,6 +37,9 @@ process.close()
 process = open("preplate.txt", "w")
 process.write("noplate")
 process.close()
+mode = open("mode.txt", "w")
+mode.write("Parking")
+mode.close()
 quit = open("quit.txt", "w")
 quit.write("no")
 quit.close()
@@ -65,6 +68,9 @@ def reset():
     reset_process = open("process.txt", "w")
     reset_process.write("")
     reset_process.close()
+    reset_mode = open("mode.txt", "w")
+    reset_mode.write("")
+    reset_mode.close()
 
 # Sort contour from left to right
 def sort_contours(cnts):
@@ -192,63 +198,66 @@ def run_api():
         # Read temp plate
         process = open("process.txt", "r")
         temp = open("temp.txt", "r")
+        mode = open("mode.txt", "r")
         current_plate = temp.read()
-        if (current_plate != ''):
-            plate = current_plate.split("-")[0]
-            plate_value = current_plate.split("-")[1]
+        current_mode = mode.read()
+        if current_mode == 'Parking':
+            if (current_plate != ''):
+                plate = current_plate.split("-")[0]
+                plate_value = current_plate.split("-")[1]
 
-            # Check condition for create ticket
-            if (str(process.read()) == "DETECTING" and int(plate_value) > 1):
-                if (plate_code != '' and id_code != ''):
-                    if similarity.plate_similarity(str(plate_code), str(plate)) > 0.8:
-                        print('Plate: ', plate)
-                        print('Code: ', plate_code)
-                        print('User ID: ', id_code)
-                        print('THANH CONG!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-                        r = requests.post(url+str(id_code))
-                        d = json.loads(r.text)
-                        successMes = d["success"]
-                        user = str(d["user"])
-                        ticket = str(d["ticket"])
-                        user = user.replace("\'", "\"")
-                        ticket = ticket.replace("\'", "\"")
-                        if successMes == True:
-                            current_user = json.loads(user)
-                            current_ticket = json.loads(ticket)
+                # Check condition for create ticket
+                if (str(process.read()) == "DETECTING" and int(plate_value) > 1):
+                    if (plate_code != '' and id_code != ''):
+                        if similarity.plate_similarity(str(plate_code), str(plate)) > 0.8:
+                            print('Plate: ', plate)
+                            print('Code: ', plate_code)
+                            print('User ID: ', id_code)
+                            print('THANH CONG!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                            r = requests.post(url+str(id_code))
+                            d = json.loads(r.text)
+                            successMes = d["success"]
+                            user = str(d["user"])
+                            ticket = str(d["ticket"])
+                            user = user.replace("\'", "\"")
+                            ticket = ticket.replace("\'", "\"")
+                            if successMes == True:
+                                current_user = json.loads(user)
+                                current_ticket = json.loads(ticket)
 
-                            username.configure(text = current_user["username"])
-                            email.configure(text = current_user["email"])
-                            position.configure(text = current_user["position"])
-                            id.configure(text = current_user["ID"])
-                            lplate.configure(text = current_user["plate"])
+                                username.configure(text = current_user["username"])
+                                position.configure(text = current_user["position"])
+                                id.configure(text = current_user["ID"])
+                                lplate.configure(text = current_user["plate"])
 
-                            db = open("db.json", "r")
-                            read_data = db.read()
-                            if read_data == '':
-                                print('Write DB')
-                                obj = {}
-                                obj[current_user["ID"]] = current_user["plate"] + "-" + current_ticket["randomCheck"]
-                                encrypted_obj = encrypt_descrypt_json.encrypt_json_with_common_cipher(obj)
-                                write_data = open("db.json", "w")
-                                write_data.write(encrypted_obj)
-                                write_data.close()
-                            else:
-                                print('Rewrite DB')
-                                print('RDB: ', read_data)
-                                obj = encrypt_descrypt_json.decrypt_json_with_common_cipher(read_data)
-                                if not (current_user["ID"] in obj):
+                                db = open("db.json", "r")
+                                read_data = db.read()
+                                if read_data == '':
+                                    obj = {}
                                     obj[current_user["ID"]] = current_user["plate"] + "-" + current_ticket["randomCheck"]
                                     encrypted_obj = encrypt_descrypt_json.encrypt_json_with_common_cipher(obj)
                                     write_data = open("db.json", "w")
                                     write_data.write(encrypted_obj)
                                     write_data.close()
-                            process = open("process.txt", "w")
-                            process.write("DONE")
-                            process.close()
+                                else:
+                                    obj = encrypt_descrypt_json.decrypt_json_with_common_cipher(read_data)
+                                    if not (current_user["ID"] in obj):
+                                        obj[current_user["ID"]] = current_user["plate"] + "-" + current_ticket["randomCheck"]
+                                        encrypted_obj = encrypt_descrypt_json.encrypt_json_with_common_cipher(obj)
+                                        write_data = open("db.json", "w")
+                                        write_data.write(encrypted_obj)
+                                        write_data.close()
+                                process = open("process.txt", "w")
+                                process.write("DONE")
+                                process.close()
 
-                            preplate = open("preplate.txt", "w")
-                            preplate.write(plate)
-                            preplate.close()
+                                preplate = open("preplate.txt", "w")
+                                preplate.write(plate)
+                                preplate.close()
+        else:
+            quit = open("quit.txt", "w")
+            quit.write("yes")
+            quit.close()
         quit = open("quit.txt", "r")
         if quit.read() == 'yes':
             reset()
@@ -301,11 +310,6 @@ if __name__ == '__main__':
     bg = PhotoImage(file="./images/main_screen.png")
     background.configure(image=bg)
 
-    # logo = Label(root)
-    # logo.place(relx=0.01, rely=0.01, width=50, height=50)
-    # icon = PhotoImage(file="./images/logo.png")
-    # logo.configure(image=icon)
-
     title_name = tkinter.Label(root,text="sParking Tracking System",font=("arial",25,"bold"),bg="white")
     title_name.place(relx=0.08, rely=0.05, width=1100, height=100)
 
@@ -322,7 +326,7 @@ if __name__ == '__main__':
     # username.configure(font="-family {Poppins} -size 10")
     username_lbl = Label(root)
     username_lbl.place(relx=0.463, rely=0.607, width=136, height=30)
-    username_lbl.configure(font="-family {Poppins} -size 10")
+    username_lbl.configure(font="-family {Poppins} -size 10 -weight {bold}")
     username_lbl.configure(foreground="#000000")
     username_lbl.configure(background="#ffffff")
     username_lbl.configure(text="Username")
@@ -335,31 +339,16 @@ if __name__ == '__main__':
     username.configure(background="#ffffff")
     username.configure(anchor="w")
 
-    email_lbl = Label(root)
-    email_lbl.place(relx=0.463, rely=0.657, width=136, height=30)
-    email_lbl.configure(font="-family {Poppins} -size 10")
-    email_lbl.configure(foreground="#000000")
-    email_lbl.configure(background="#ffffff")
-    email_lbl.configure(text="Email")
-    email_lbl.configure(anchor="w")
-
-    email = Label(root)
-    email.place(relx=0.550, rely=0.657, width=136, height=30)
-    email.configure(font="-family {Poppins} -size 10")
-    email.configure(foreground="#000000")
-    email.configure(background="#ffffff")
-    email.configure(anchor="w")
-
     position_lbl = Label(root)
-    position_lbl.place(relx=0.463, rely=0.707, width=136, height=30)
-    position_lbl.configure(font="-family {Poppins} -size 10")
+    position_lbl.place(relx=0.463, rely=0.657, width=136, height=30)
+    position_lbl.configure(font="-family {Poppins} -size 10 -weight {bold}")
     position_lbl.configure(foreground="#000000")
     position_lbl.configure(background="#ffffff")
-    position_lbl.configure(text="Role")
+    position_lbl.configure(text="Position")
     position_lbl.configure(anchor="w")
 
     position = Label(root)
-    position.place(relx=0.550, rely=0.707, width=136, height=30)
+    position.place(relx=0.550, rely=0.657, width=136, height=30)
     position.configure(font="-family {Poppins} -size 10")
     position.configure(foreground="#000000")
     position.configure(background="#ffffff")
@@ -367,7 +356,7 @@ if __name__ == '__main__':
 
     id_lbl = Label(root)
     id_lbl.place(relx=0.683, rely=0.607, width=136, height=30)
-    id_lbl.configure(font="-family {Poppins} -size 10")
+    id_lbl.configure(font="-family {Poppins} -size 10 -weight {bold}")
     id_lbl.configure(foreground="#000000")
     id_lbl.configure(background="#ffffff")
     id_lbl.configure(text="ID Number")
@@ -382,7 +371,7 @@ if __name__ == '__main__':
 
     lplate_lbl = Label(root)
     lplate_lbl.place(relx=0.683, rely=0.657, width=136, height=30)
-    lplate_lbl.configure(font="-family {Poppins} -size 10")
+    lplate_lbl.configure(font="-family {Poppins} -size 10 -weight {bold}")
     lplate_lbl.configure(foreground="#000000")
     lplate_lbl.configure(background="#ffffff")
     lplate_lbl.configure(text="Plate Number")
@@ -394,6 +383,49 @@ if __name__ == '__main__':
     lplate.configure(foreground="#000000")
     lplate.configure(background="#ffffff")
     lplate.configure(anchor="w")
+
+    mode_lbl = Label(root)
+    mode_lbl.place(relx=0.463, rely=0.707, width=136, height=30)
+    mode_lbl.configure(font="-family {Poppins} -size 10 -weight {bold}")
+    mode_lbl.configure(foreground="#000000")
+    mode_lbl.configure(background="#ffffff")
+    mode_lbl.configure(text="Mode")
+    mode_lbl.configure(anchor="w")
+
+    OPTIONS = [
+    "Parking",
+    "Taking"
+    ]
+
+    variable = StringVar()
+    variable.set(OPTIONS[0]) # default value
+
+    mode_dropdown = tkinter.OptionMenu(root, variable, *OPTIONS)
+    mode_dropdown.configure(cursor="hand2")
+    mode_dropdown.configure(foreground="#ffffff")
+    mode_dropdown.configure(background="#D2463E")
+    mode_dropdown.configure(font="-family {Poppins SemiBold} -size 10 -weight {bold}")
+    mode_dropdown.configure(borderwidth="0")
+    mode_dropdown.place(relx=0.550, rely=0.707, width=136, height=30)
+
+    def handle_switch():
+        root.destroy()
+        quit = open("mode.txt", "w")
+        quit.write(variable.get())
+        quit.close()
+
+    switch_btn = tkinter.Button(root, highlightthickness=0)
+    switch_btn.place(relx=0.683, rely=0.707, width=136, height=30)
+    switch_btn.configure(relief="flat")
+    switch_btn.configure(overrelief="flat")
+    switch_btn.configure(activebackground="#D2463E")
+    switch_btn.configure(cursor="hand2")
+    switch_btn.configure(foreground="#ffffff")
+    switch_btn.configure(background="#D2463E")
+    switch_btn.configure(font="-family {Poppins SemiBold} -size 10 -weight {bold}")
+    switch_btn.configure(borderwidth="0")
+    switch_btn.configure(text="""SWITCH""")
+    switch_btn.configure(command=handle_switch)
 
     threading.Thread(target=show_cam).start()
     threading.Thread(target=show_vid).start()
