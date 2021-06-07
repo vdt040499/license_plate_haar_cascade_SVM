@@ -1,4 +1,5 @@
 
+from os import read
 import cv2
 import json
 import time
@@ -14,6 +15,7 @@ from tkinter import *
 from tkinter.ttk import *
 import handle_halfofplate
 # import RPi.GPIO as GPIO
+import encrypt_descrypt_json
 from absl import app, logging
 from tkinter import messagebox
 from PIL import Image, ImageTk
@@ -158,8 +160,8 @@ def run_api():
     global current_user
 
     # Api url
-    # url = 'https://votan-sparking.herokuapp.com/tickets/createticket'
     url = 'http://localhost:5000/tickets/'
+    # url = 'https://votan-sparking.herokuapp.com/tickets/'
 
     # Init status
     reset_temp = open("temp.txt", "w")
@@ -207,16 +209,39 @@ def run_api():
                         d = json.loads(r.text)
                         successMes = d["success"]
                         user = str(d["user"])
+                        ticket = str(d["ticket"])
                         user = user.replace("\'", "\"")
+                        ticket = ticket.replace("\'", "\"")
                         if successMes == True:
                             current_user = json.loads(user)
-                            print('User: ', current_user)
+                            current_ticket = json.loads(ticket)
+
                             username.configure(text = current_user["username"])
                             email.configure(text = current_user["email"])
                             position.configure(text = current_user["position"])
                             id.configure(text = current_user["ID"])
                             lplate.configure(text = current_user["plate"])
 
+                            db = open("db.json", "r")
+                            read_data = db.read()
+                            if read_data == '':
+                                print('Write DB')
+                                obj = {}
+                                obj[current_user["ID"]] = current_user["plate"] + "-" + current_ticket["randomCheck"]
+                                encrypted_obj = encrypt_descrypt_json.encrypt_json_with_common_cipher(obj)
+                                write_data = open("db.json", "w")
+                                write_data.write(encrypted_obj)
+                                write_data.close()
+                            else:
+                                print('Rewrite DB')
+                                print('RDB: ', read_data)
+                                obj = encrypt_descrypt_json.decrypt_json_with_common_cipher(read_data)
+                                if not (current_user["ID"] in obj):
+                                    obj[current_user["ID"]] = current_user["plate"] + "-" + current_ticket["randomCheck"]
+                                    encrypted_obj = encrypt_descrypt_json.encrypt_json_with_common_cipher(obj)
+                                    write_data = open("db.json", "w")
+                                    write_data.write(encrypted_obj)
+                                    write_data.close()
                             process = open("process.txt", "w")
                             process.write("DONE")
                             process.close()
@@ -228,34 +253,6 @@ def run_api():
         if quit.read() == 'yes':
             reset()
             break
-
-    # Run on RFID
-    # url = 'https://votan-sparking.herokuapp.com/tickets/createticket'
-    # while True:
-    #     file = open("temp.txt", "r")
-    #     number = str(file.read())
-    #     if len(number) > 10:
-    #         dataArr = number.split("-")
-    #         if (int(dataArr[1]) >= 5):
-    #             while True:
-    #                 reader = SimpleMFRC522()
-    #                 id, text = reader.read()
-    #                 print('IDcard: ', id)
-    #                 print('User: ', text)
-    #                 infoArr = text.split(' - ')
-    #                 studentId = str(infoArr[0])
-    #                 payload = { 'numplate': dataArr[0], 'userId': studentId }    
-    #                 r = requests.post(url, data=payload)
-    #                 d = json.loads(r.text)
-    #                 successRes = d["success"]
-    #                 messRes = d["message"]
-    #                 if successRes == False:
-    #                     print(messRes)
-    #                     break
-    #                 else:
-    #                     print(str(studentId) + 'TAO VE THANH CONG')
-    #                     unlock_cooler()
-    #                     break
 
 def show_cam():
     global img                            
