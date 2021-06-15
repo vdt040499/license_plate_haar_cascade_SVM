@@ -142,10 +142,10 @@ def run_rp():
         if not not bool (plateNumberDict):
             keyMax = max(plateNumberDict, key=plateNumberDict.get)
             if (process.read() == 'DETECTING' and int(plateNumberDict[keyMax]) > 1 and len(plateNumberDict) != 0):
-                frame = cv2.putText(frame, "MOI QUET MA", (20, 100),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-                temp_frame = cv2.putText(frame, "MOI QUET MA", (20, 100),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                frame = cv2.putText(frame, "MOI QUET MA", (20, 30),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
+                temp_frame = cv2.putText(frame, "MOI QUET MA", (20, 30),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
 
         # if (process.read() == 'DONE' or (len(plateNumberDict) == 0 and temp.read() != '')):
             # frame = cv2.putText(frame, "MOI XE QUA", (20, 100),
@@ -154,6 +154,10 @@ def run_rp():
             #                 cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
         fps = 1.0 / (time.time() - start_time)
+        frame = cv2.putText(frame, "FPS: " + str(round(fps, 2)), (20, 200),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+        temp_frame = cv2.putText(frame, "FPS: " + str(round(fps, 2)), (20, 200),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
         print("FPS: %.2f" % fps)
         print('------------------------------------------------------------------------------------------------------------')
         quit = open("quit.txt", "r")
@@ -185,10 +189,16 @@ def run_api():
 
         plate_code = ''
         id_code = ''
+        randomCheck = ''
         for barcode in decode(img):
             code = barcode.data.decode('utf-8')
-            plate_code = code.split('-')[0]
-            id_code = code.split('-')[1]
+            if (len(code) > 19):
+                plate_code = code.split('-')[0]
+                id_code = code.split('-')[1]
+                randomCheck = code.split('-')[2]
+            else:
+                plate_code = code.split('-')[0]
+                id_code = code.split('-')[1]
             pts = np.array([barcode.polygon],np.int32)
             pts = pts.reshape((-1,1,2))
             cv2.polylines(img,[pts],True,(255,0,255),5)
@@ -210,43 +220,13 @@ def run_api():
                 if (str(process.read()) == "DETECTING" and int(plate_value) > 1):
                     if (plate_code != '' and id_code != ''):
                         if similarity.plate_similarity(str(plate_code), str(plate)) > 0.8:
-                            print('Plate: ', plate)
-                            print('Code: ', plate_code)
-                            print('User ID: ', id_code)
-                            print('THANH CONG!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-                            r = requests.post(url+str(id_code))
-                            d = json.loads(r.text)
-                            successMes = d["success"]
-                            user = str(d["user"])
-                            ticket = str(d["ticket"])
-                            user = user.replace("\'", "\"")
-                            ticket = ticket.replace("\'", "\"")
-                            if successMes == True:
-                                current_user = json.loads(user)
-                                current_ticket = json.loads(ticket)
+                            # Run servo
+                            # Check-in process
+                            if randomCheck == '':
+                                print('Plate: ', plate)
+                                print('Id: ', plate_code)
+                                print('TAO VE THANH CONG!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
-                                username.configure(text = current_user["username"])
-                                position.configure(text = current_user["position"])
-                                id.configure(text = current_user["ID"])
-                                lplate.configure(text = current_user["plate"])
-
-                                db = open("db.json", "r")
-                                read_data = db.read()
-                                if read_data == '':
-                                    obj = {}
-                                    obj[current_user["ID"]] = current_user["plate"] + "-" + current_ticket["randomCheck"]
-                                    encrypted_obj = encrypt_descrypt_json.encrypt_json_with_common_cipher(obj)
-                                    write_data = open("db.json", "w")
-                                    write_data.write(encrypted_obj)
-                                    write_data.close()
-                                else:
-                                    obj = encrypt_descrypt_json.decrypt_json_with_common_cipher(read_data)
-                                    if not (current_user["ID"] in obj):
-                                        obj[current_user["ID"]] = current_user["plate"] + "-" + current_ticket["randomCheck"]
-                                        encrypted_obj = encrypt_descrypt_json.encrypt_json_with_common_cipher(obj)
-                                        write_data = open("db.json", "w")
-                                        write_data.write(encrypted_obj)
-                                        write_data.close()
                                 process = open("process.txt", "w")
                                 process.write("DONE")
                                 process.close()
@@ -254,6 +234,82 @@ def run_api():
                                 preplate = open("preplate.txt", "w")
                                 preplate.write(plate)
                                 preplate.close()
+                                r = requests.post(url+str(id_code))
+                                d = json.loads(r.text)
+                                successMes = d["success"]
+                                user = str(d["user"])
+                                ticket = str(d["ticket"])
+                                user = user.replace("\'", "\"")
+                                ticket = ticket.replace("\'", "\"")
+                                if successMes == True:
+                                    current_user = json.loads(user)
+                                    current_ticket = json.loads(ticket)
+
+                                    username.configure(text = current_user["username"])
+                                    position.configure(text = current_user["position"])
+                                    id.configure(text = current_user["ID"])
+                                    lplate.configure(text = current_user["plate"])
+
+                                    db = open("db.json", "r")
+                                    read_data = db.read()
+                                    if read_data == '':
+                                        obj = {}
+                                        obj[current_user["ID"]] = current_user["plate"] + "-" + current_ticket["randomCheck"]
+                                        encrypted_obj = encrypt_descrypt_json.encrypt_json_with_common_cipher(obj)
+                                        write_data = open("db.json", "w")
+                                        write_data.write(encrypted_obj)
+                                        write_data.close()
+                                    else:
+                                        obj = encrypt_descrypt_json.decrypt_json_with_common_cipher(read_data)
+                                        if not (current_user["ID"] in obj):
+                                            obj[current_user["ID"]] = current_user["plate"] + "-" + current_ticket["randomCheck"]
+                                            encrypted_obj = encrypt_descrypt_json.encrypt_json_with_common_cipher(obj)
+                                            write_data = open("db.json", "w")
+                                            write_data.write(encrypted_obj)
+                                            write_data.close()
+                            # Check-out process
+                            else:
+                                print('Plate: ', plate_code)
+                                print('Id: ', id_code)
+                                print('randomCheck: ', randomCheck)
+
+                                db = open("db.json")
+                                read_db = db.read()
+                                if read_db != '':
+                                    obj = encrypt_descrypt_json.decrypt_json_with_common_cipher(read_db)
+                                    current_item = obj[id_code]
+                                    if id_code in obj and current_item.split("-")[1]:
+                                        print('KIEM VE THANH CONG!!!!!!!!!!!!!!!!!!!')
+                                        # Run servo
+                                        obj.pop(id_code)
+                                        print('Object: ', obj)
+                                        # encrypted_obj = encrypt_descrypt_json.encrypt_json_with_common_cipher(obj)
+                                        # write_data = open("db.json", "w")
+                                        # write_data.write(encrypted_obj)
+                                        # write_data.close()
+                                        
+                                        process = open("process.txt", "w")
+                                        process.write("DONE")
+                                        process.close()
+
+                                        preplate = open("preplate.txt", "w")
+                                        preplate.write(plate)
+                                        preplate.close()
+
+                                        payload = { 'plate': plate_code }    
+                                        r = requests.post(url+str(id_code)+'/pay', data=payload)
+                                        d = json.loads(r.text)
+                                        successMes = d["success"]
+                                        user = str(d["user"])
+                                        user = user.replace("\'", "\"")
+                                        if successMes == True:
+                                            current_user = json.loads(user)
+
+                                            username.configure(text = current_user["username"])
+                                            position.configure(text = current_user["position"])
+                                            id.configure(text = current_user["ID"])
+                                            lplate.configure(text = current_user["plate"])
+
         else:
             quit = open("quit.txt", "w")
             quit.write("yes")
@@ -401,12 +457,13 @@ if __name__ == '__main__':
     variable.set(OPTIONS[0]) # default value
 
     mode_dropdown = tkinter.OptionMenu(root, variable, *OPTIONS)
+    mode_dropdown["highlightthickness"]=0
     mode_dropdown.configure(cursor="hand2")
     mode_dropdown.configure(foreground="#ffffff")
     mode_dropdown.configure(background="#D2463E")
     mode_dropdown.configure(font="-family {Poppins SemiBold} -size 10 -weight {bold}")
     mode_dropdown.configure(borderwidth="0")
-    mode_dropdown.place(relx=0.550, rely=0.707, width=136, height=30)
+    mode_dropdown.place(relx=0.530, rely=0.707, width=136, height=30)
 
     def handle_switch():
         root.destroy()
