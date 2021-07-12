@@ -171,6 +171,7 @@ def run_api():
 
     # Api url
     url = 'http://localhost:5000/tickets/'
+    # url = 'http://79ac4add273a.ngrok.io'
     # url = 'https://votan-sparking.herokuapp.com/tickets/'
 
     # Init status
@@ -237,11 +238,11 @@ def run_api():
                                 r = requests.post(url+str(id_code))
                                 d = json.loads(r.text)
                                 successMes = d["success"]
-                                user = str(d["user"])
-                                ticket = str(d["ticket"])
-                                user = user.replace("\'", "\"")
-                                ticket = ticket.replace("\'", "\"")
                                 if successMes == True:
+                                    user = str(d["user"])
+                                    ticket = str(d["ticket"])
+                                    user = user.replace("\'", "\"")
+                                    ticket = ticket.replace("\'", "\"")
                                     current_user = json.loads(user)
                                     current_ticket = json.loads(ticket)
 
@@ -277,39 +278,48 @@ def run_api():
                                 read_db = db.read()
                                 if read_db != '':
                                     obj = encrypt_descrypt_json.decrypt_json_with_common_cipher(read_db)
-                                    current_item = obj[id_code]
-                                    if id_code in obj and current_item.split("-")[1]:
-                                        print('KIEM VE THANH CONG!!!!!!!!!!!!!!!!!!!')
-                                        # Run servo
-                                        obj.pop(id_code)
-                                        print('Object: ', obj)
-                                        # encrypted_obj = encrypt_descrypt_json.encrypt_json_with_common_cipher(obj)
-                                        # write_data = open("db.json", "w")
-                                        # write_data.write(encrypted_obj)
-                                        # write_data.close()
-                                        
-                                        process = open("process.txt", "w")
-                                        process.write("DONE")
-                                        process.close()
+                                    print('Object: ', obj)
+                                    if obj:
+                                        current_item = obj[id_code]
+                                        if id_code in obj and current_item.split("-")[1] == randomCheck and plate_code == current_item.split("-")[0]:
+                                            print('KIEM VE THANH CONG!!!!!!!!!!!!!!!!!!!')
+                                            # Run servo
+                                            obj.pop(id_code)
+                                            print('Object: ', obj)
+                                            encrypted_obj = encrypt_descrypt_json.encrypt_json_with_common_cipher(obj)
+                                            write_data = open("db.json", "w")
+                                            write_data.write(encrypted_obj)
+                                            write_data.close()
+                                            
+                                            process = open("process.txt", "w")
+                                            process.write("DONE")
+                                            process.close()
 
-                                        preplate = open("preplate.txt", "w")
-                                        preplate.write(plate)
-                                        preplate.close()
+                                            preplate = open("preplate.txt", "w")
+                                            preplate.write(plate)
+                                            preplate.close()
 
-                                        payload = { 'plate': plate_code }    
-                                        r = requests.post(url+str(id_code)+'/pay', data=payload)
-                                        d = json.loads(r.text)
-                                        successMes = d["success"]
-                                        user = str(d["user"])
-                                        user = user.replace("\'", "\"")
-                                        if successMes == True:
-                                            current_user = json.loads(user)
+                                            payload = { 'plate': plate_code }    
+                                            r = requests.post(url+str(id_code)+'/pay', data=payload)
+                                            d = json.loads(r.text)
+                                            successMes = d["success"]
+                                            if successMes == True:
+                                                user = str(d["user"])
+                                                user = user.replace("\'", "\"")
+                                                current_user = json.loads(user)
 
-                                            username.configure(text = current_user["username"])
-                                            position.configure(text = current_user["position"])
-                                            id.configure(text = current_user["ID"])
-                                            lplate.configure(text = current_user["plate"])
-
+                                                username.configure(text = current_user["username"])
+                                                position.configure(text = current_user["position"])
+                                                id.configure(text = current_user["ID"])
+                                                lplate.configure(text = current_user["plate"])
+                                        else: 
+                                            continue
+                                    else:
+                                        continue
+                                else:
+                                    continue
+                        else:
+                            continue
         else:
             quit = open("quit.txt", "w")
             quit.write("yes")
@@ -448,28 +458,28 @@ if __name__ == '__main__':
     mode_lbl.configure(text="Mode")
     mode_lbl.configure(anchor="w")
 
-    OPTIONS = [
-    "Parking",
-    "Taking"
-    ]
+    # OPTIONS = [
+    # "Parking",
+    # "Taking"
+    # ]
 
-    variable = StringVar()
-    variable.set(OPTIONS[0]) # default value
+    # variable = StringVar()
+    # variable.set(OPTIONS[0]) # default value
 
-    mode_dropdown = tkinter.OptionMenu(root, variable, *OPTIONS)
-    mode_dropdown["highlightthickness"]=0
-    mode_dropdown.configure(cursor="hand2")
-    mode_dropdown.configure(foreground="#ffffff")
-    mode_dropdown.configure(background="#D2463E")
-    mode_dropdown.configure(font="-family {Poppins SemiBold} -size 10 -weight {bold}")
-    mode_dropdown.configure(borderwidth="0")
-    mode_dropdown.place(relx=0.530, rely=0.707, width=136, height=30)
+    # mode_dropdown = tkinter.OptionMenu(root, variable, *OPTIONS)
+    # mode_dropdown["highlightthickness"]=0
+    # mode_dropdown.configure(cursor="hand2")
+    # mode_dropdown.configure(foreground="#ffffff")
+    # mode_dropdown.configure(background="#D2463E")
+    # mode_dropdown.configure(font="-family {Poppins SemiBold} -size 10 -weight {bold}")
+    # mode_dropdown.configure(borderwidth="0")
+    # mode_dropdown.place(relx=0.530, rely=0.707, width=136, height=30)
 
-    def handle_switch():
-        root.destroy()
-        quit = open("mode.txt", "w")
-        quit.write(variable.get())
-        quit.close()
+    # def handle_switch():
+    #     root.destroy()
+    #     quit = open("mode.txt", "w")
+    #     quit.write(variable.get())
+    #     quit.close()
 
     switch_btn = tkinter.Button(root, highlightthickness=0)
     switch_btn.place(relx=0.683, rely=0.707, width=136, height=30)
@@ -482,7 +492,7 @@ if __name__ == '__main__':
     switch_btn.configure(font="-family {Poppins SemiBold} -size 10 -weight {bold}")
     switch_btn.configure(borderwidth="0")
     switch_btn.configure(text="""SWITCH""")
-    switch_btn.configure(command=handle_switch)
+    # switch_btn.configure(command=handle_switch)
 
     threading.Thread(target=show_cam).start()
     threading.Thread(target=show_vid).start()
